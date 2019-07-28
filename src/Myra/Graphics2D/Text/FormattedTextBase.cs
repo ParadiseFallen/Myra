@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Text;
 using Myra.Utility;
-using StbTextEditSharp;
 
 #if !XENKO
 using Microsoft.Xna.Framework;
@@ -136,35 +135,103 @@ namespace Myra.Graphics2D.Text
 			_lineCreator = creator;
 		}
 
+		internal TextEditRow LayoutRow(int startIndex, int? width)
+		{
+			var r = new TextEditRow();
+
+			if (string.IsNullOrEmpty(_text))
+			{
+				return r;
+			}
+
+			_stringBuilder.Clear();
+			int? lastBreakPosition = null;
+			Point? lastBreakMeasure = null;
+
+			for (var i = startIndex; i < _text.Length; ++i)
+			{
+				var c = _displayText[i];
+
+				_stringBuilder.Append(c);
+
+				var sz = Point.Zero;
+
+				if (c != '\n')
+				{
+					sz = Font.MeasureString(_stringBuilder).ToPoint();
+				}
+				else
+				{
+					sz = new Point(r.X + NewLineWidth, Math.Max(r.Y, CrossEngineStuff.LineSpacing(_font)));
+				}
+
+				if (width != null && c == '\n')
+				{
+					// Break right here
+					++r.CharsCount;
+					r.X = sz.X;
+					r.Y = sz.Y;
+					break;
+				}
+
+				if (width != null && sz.X > width.Value)
+				{
+					if (lastBreakPosition != null)
+					{
+						r.CharsCount = lastBreakPosition.Value - startIndex;
+					}
+
+					if (lastBreakMeasure != null)
+					{
+						r.X = lastBreakMeasure.Value.X;
+						r.Y = lastBreakMeasure.Value.Y;
+					}
+
+					break;
+				}
+
+				if (char.IsWhiteSpace(c))
+				{
+					lastBreakPosition = i + 1;
+					lastBreakMeasure = sz;
+				}
+
+				++r.CharsCount;
+				r.X = sz.X;
+				r.Y = sz.Y;
+			}
+
+			return r;
+		}
+
 		public Point Measure(int? width)
 		{
 			var result = Point.Zero;
 			if (_text != null)
 			{
 				var i = 0;
-
-				float y = 0;
+				var y = 0;
 				while (i < _text.Length)
 				{
 					var r = LayoutRow(i, width);
 
-					if (r.num_chars == 0)
+					if (r.CharsCount == 0)
 					{
 						break;
 					}
 
-					if (r.x1 > result.X)
+					if (r.X > result.X)
 					{
-						result.X = (int)r.x1;
+						result.X = r.X;
 					}
 
-					i += r.num_chars;
+					i += r.CharsCount;
 
-					y += r.ymax;
+					y += r.Y;
 					y += _verticalSpacing;
 				}
 
-				result.Y = (int)y;
+				result.Y = y;
 			}
 
 			if (result.Y == 0)
@@ -196,22 +263,22 @@ namespace Myra.Graphics2D.Text
 			{
 				var r = LayoutRow(i, Width);
 
-				if (r.num_chars == 0)
+				if (r.CharsCount == 0)
 				{
 					break;
 				}
 
-				var line = _lineCreator(_font, _displayText.Substring(i, r.num_chars), new Point((int)(r.x1 - r.x0), (int)(r.baseline_y_delta)));
+				var line = _lineCreator(_font, _displayText.Substring(i, r.CharsCount), new Point(r.X, r.Y));
+				line.LineStart = i;
 				lines.Add(line);
 
-				i += r.num_chars;
+				i += r.CharsCount;
 			}
 
 			_strings = lines.ToArray();
 
 			// Calculate size
 			_size = Point.Zero;
-			var y = 0;
 			for (i = 0; i < _strings.Length; ++i)
 			{
 				var line = _strings[i];
@@ -233,6 +300,27 @@ namespace Myra.Graphics2D.Text
 			}
 
 			_dirty = false;
+		}
+
+		public int? GetLineByPosition(int index)
+		{
+			if (string.IsNullOrEmpty(Text) || index < 0 || index >= Text.Length)
+			{
+				return null;
+			}
+
+			Update();
+
+			for(var i = 0; i < _strings.Length; ++i)
+			{
+				var s = _strings[i];
+				if (s.LineStart <= index && index <= s.LineStart + s.Text.Length())
+				{
+					return i;
+				}
+			}
+
+			return null;
 		}
 
 		public void Draw(SpriteBatch batch, Point position, Rectangle clip, Color textColor, float opacity = 1.0f)

@@ -65,6 +65,13 @@ namespace Myra.Graphics2D.UI
 			}
 		}
 
+		[EditCategory("Behavior")]
+		[DefaultValue(false)]
+		public bool Multiline
+		{
+			get; set;
+		}
+
 		private string UserText
 		{
 			get
@@ -388,6 +395,11 @@ namespace Myra.Graphics2D.UI
 
 		internal void Delete(int where, int len)
 		{
+			if (where < 0 || where >= Length || len < 0)
+			{
+				return;
+			}
+
 			UndoStack.MakeDelete(Text, where, len);
 			DeleteChars(where, len);
 		}
@@ -518,6 +530,50 @@ namespace Myra.Graphics2D.UI
 			finally
 			{
 				_suppressRedoStackReset = false;
+			}
+		}
+
+		internal void MoveLine(int delta)
+		{
+			var line = _formattedText.GetLineByPosition(CursorPosition);
+			if (line == null)
+			{
+				return;
+			}
+
+			var newLine = line.Value + delta;
+			if (newLine < 0 || newLine >= _formattedText.Strings.Length)
+			{
+				return;
+			}
+
+			var bounds = ActualBounds;
+			var pos = GetRenderPositionByIndex(CursorPosition);
+			var preferredX = pos.X - bounds.X;
+
+			// Find closest glyph
+			var newString = _formattedText.Strings[newLine];
+			for (var i = 0; i < newString.Text.Length; ++i)
+			{
+				var glyph = newString.GetGlyphInfoByIndex(i);
+				if (glyph == null)
+				{
+					continue;
+				}
+
+				if (glyph.Bounds.X <= preferredX && preferredX <= glyph.Bounds.Right)
+				{
+					if (preferredX - glyph.Bounds.X < glyph.Bounds.Width / 2 || i >= newString.Text.Length - 1)
+					{
+						CursorPosition = newString.LineStart + i;
+					}
+					else
+					{
+						CursorPosition = newString.LineStart + i + 1;
+					}
+
+					break;
+				}
 			}
 		}
 
@@ -675,21 +731,34 @@ namespace Myra.Graphics2D.UI
 					break;
 
 				case Keys.Left:
+					if (CursorPosition > 0)
+					{
+						--CursorPosition;
+					}
 					break;
 
 				case Keys.Right:
+					if (CursorPosition < Length)
+					{
+						++CursorPosition;
+					}
+
 					break;
 
 				case Keys.Up:
+					MoveLine(-1);
 					break;
 
 				case Keys.Down:
+					MoveLine(1);
 					break;
 
 				case Keys.Back:
+					Delete(CursorPosition - 1, 1);
 					break;
 
 				case Keys.Delete:
+					Delete(CursorPosition, 1);
 					break;
 
 				case Keys.Home:
