@@ -14,13 +14,13 @@ using Xenko.Graphics;
 
 namespace Myra.Graphics2D.Text
 {
-	public class FormattedTextBase<T> where T: TextLine
+	public class FormattedTextBase<T> where T : TextLine
 	{
 		public const int NewLineWidth = 0;
 
 		private SpriteFont _font;
 		private string _text = string.Empty;
-	    private string _displayText = string.Empty;
+		private string _displayText = string.Empty;
 		private int _verticalSpacing;
 		private int? _width;
 		private T[] _strings;
@@ -31,7 +31,10 @@ namespace Myra.Graphics2D.Text
 
 		public SpriteFont Font
 		{
-			get { return _font; }
+			get
+			{
+				return _font;
+			}
 			set
 			{
 				if (value == _font)
@@ -44,11 +47,17 @@ namespace Myra.Graphics2D.Text
 			}
 		}
 
-        public bool IsPassword { get; set; }
+		public bool IsPassword
+		{
+			get; set;
+		}
 
 		public string Text
 		{
-			get { return _text; }
+			get
+			{
+				return _text;
+			}
 			set
 			{
 				if (value == _text)
@@ -57,14 +66,17 @@ namespace Myra.Graphics2D.Text
 				}
 
 				_text = value;
-			    _displayText = IsPassword ? new string('*', _text.Length) : _text;
-                InvalidateLayout();
+				_displayText = IsPassword ? new string('*', _text.Length) : _text;
+				InvalidateLayout();
 			}
 		}
 
 		public int VerticalSpacing
 		{
-			get { return _verticalSpacing; }
+			get
+			{
+				return _verticalSpacing;
+			}
 
 			set
 			{
@@ -80,7 +92,10 @@ namespace Myra.Graphics2D.Text
 
 		public int? Width
 		{
-			get { return _width; }
+			get
+			{
+				return _width;
+			}
 			set
 			{
 				if (value == _width)
@@ -119,78 +134,6 @@ namespace Myra.Graphics2D.Text
 			}
 
 			_lineCreator = creator;
-		}
-
-		internal TextEditRow LayoutRow(int startIndex, int? width)
-		{
-			var r = new TextEditRow();
-
-			if (string.IsNullOrEmpty(_text))
-			{
-				return r;
-			}
-
-			_stringBuilder.Clear();
-			int? lastBreakPosition = null;
-			Vector2? lastBreakMeasure = null;
-
-			for (var i = startIndex; i < _text.Length; ++i)
-			{
-				var c = _displayText[i];
-
-				_stringBuilder.Append(c);
-
-				Vector2 sz =Vector2.Zero;
-
-				if (c != '\n')
-				{
-					sz = Font.MeasureString(_stringBuilder);
-				}
-				else
-				{
-					sz = new Vector2(r.x1 + NewLineWidth, Math.Max(r.ymax, CrossEngineStuff.LineSpacing(_font)));
-				}
-
-				if (width != null && c == '\n')
-				{
-					// Break right here
-					++r.num_chars;
-					r.x1 = sz.X;
-					r.ymax = sz.Y;
-					r.baseline_y_delta = sz.Y;
-					break;
-				}
-
-				if (width != null && sz.X > width.Value)
-				{
-					if (lastBreakPosition != null)
-					{
-						r.num_chars = lastBreakPosition.Value - startIndex;
-					}
-
-					if (lastBreakMeasure != null)
-					{
-						r.x1 = lastBreakMeasure.Value.X;
-						r.ymax = lastBreakMeasure.Value.Y;
-						r.baseline_y_delta = lastBreakMeasure.Value.Y;
-					}
-
-					break;
-				}
-
-				if (char.IsWhiteSpace(c))
-				{
-					lastBreakPosition = i + 1;
-					lastBreakMeasure = sz;
-				}
-
-				++r.num_chars;
-				r.x1 = sz.X;
-				r.ymax = sz.Y;
-				r.baseline_y_delta = sz.Y;
-			}
-
-			return r;
 		}
 
 		public Point Measure(int? width)
