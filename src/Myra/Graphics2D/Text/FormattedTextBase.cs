@@ -302,21 +302,48 @@ namespace Myra.Graphics2D.Text
 			_dirty = false;
 		}
 
-		public int? GetLineByPosition(int index)
+		public T GetLineByCursorPosition(int cursorPosition)
 		{
-			if (string.IsNullOrEmpty(Text) || index < 0 || index >= Text.Length)
+			Update();
+
+			if (_strings.Length == 0)
+			{
+				return null;
+			}
+
+			if (cursorPosition < 0)
+			{
+				return _strings[0];
+			}
+
+			for(var i = 0; i < _strings.Length; ++i)
+			{
+				var s = _strings[i];
+				if (s.LineStart <= cursorPosition && cursorPosition < s.LineStart + s.Text.Length())
+				{
+					return s;
+				}
+			}
+
+			return _strings[_strings.Length - 1];
+		}
+
+		public T GetLineByY(int y)
+		{
+			if (string.IsNullOrEmpty(Text) || y < 0)
 			{
 				return null;
 			}
 
 			Update();
 
-			for(var i = 0; i < _strings.Length; ++i)
+			for (var i = 0; i < _strings.Length; ++i)
 			{
 				var s = _strings[i];
-				if (s.LineStart <= index && index <= s.LineStart + s.Text.Length())
+
+				if (s.Top <= y && y < s.Top + s.Size.Y)
 				{
-					return i;
+					return s;
 				}
 			}
 
