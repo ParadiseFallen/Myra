@@ -282,14 +282,14 @@ namespace Myra.Graphics2D.UI
 			}
 		}
 
-		private int SelectStart
+		public int SelectStart
 		{
-			get; set;
+			get; private set;
 		}
 
-		private int SelectEnd
+		public int SelectEnd
 		{
-			get; set;
+			get; private set;
 		}
 
 		/// <summary>
@@ -434,7 +434,7 @@ namespace Myra.Graphics2D.UI
 				DeleteChars(CursorPosition, 1);
 				if (InsertChar(CursorPosition, ch))
 				{
-					++CursorPosition;
+					UserSetCursorPosition(CursorPosition + 1);
 				}
 			}
 			else
@@ -443,87 +443,57 @@ namespace Myra.Graphics2D.UI
 				if (InsertChar(CursorPosition, ch))
 				{
 					UndoStack.MakeInsert(CursorPosition, 1);
-					++CursorPosition;
+					UserSetCursorPosition(CursorPosition + 1);
 				}
+			}
+		}
+
+		private void UndoRedo(UndoRedoStack undoStack, UndoRedoStack redoStack)
+		{
+			if (undoStack.Stack.Count == 0)
+			{
+				return;
+			}
+
+			var record = undoStack.Stack.Pop();
+			try
+			{
+				_suppressRedoStackReset = true;
+				switch (record.OperationType)
+				{
+					case OperationType.Insert:
+						redoStack.MakeDelete(Text, record.Where, record.Length);
+						DeleteChars(record.Where, record.Length);
+						UserSetCursorPosition(record.Where);
+						break;
+					case OperationType.Delete:
+						if (InsertChars(record.Where, record.Data))
+						{
+							redoStack.MakeInsert(record.Where, record.Data.Length);
+							UserSetCursorPosition(record.Where + record.Data.Length);
+						}
+						break;
+					case OperationType.Replace:
+						redoStack.MakeReplace(Text, record.Where, record.Length, record.Data.Length());
+						DeleteChars(record.Where, record.Length);
+						InsertChars(record.Where, record.Data);
+						break;
+				}
+			}
+			finally
+			{
+				_suppressRedoStackReset = false;
 			}
 		}
 
 		private void Undo()
 		{
-			if (UndoStack.Stack.Count == 0)
-			{
-				return;
-			}
-
-			var record = UndoStack.Stack.Pop();
-			try
-			{
-				_suppressRedoStackReset = true;
-				switch (record.OperationType)
-				{
-					case OperationType.Insert:
-						RedoStack.MakeDelete(Text, record.Where, record.Length);
-						DeleteChars(record.Where, record.Length);
-						CursorPosition = record.Where;
-						break;
-					case OperationType.Delete:
-						if (InsertChars(record.Where, record.Data))
-						{
-							RedoStack.MakeInsert(record.Where, record.Data.Length);
-							CursorPosition = record.Where + record.Data.Length;
-						}
-						break;
-					case OperationType.Replace:
-						RedoStack.MakeReplace(Text, record.Where, record.Length, record.Data.Length());
-						DeleteChars(record.Where, record.Length);
-						InsertChars(record.Where, record.Data);
-						break;
-				}
-			}
-			finally
-			{
-				_suppressRedoStackReset = false;
-			}
+			UndoRedo(UndoStack, RedoStack);
 		}
 
 		private void Redo()
 		{
-			if (RedoStack.Stack.Count == 0)
-			{
-				return;
-			}
-
-			var record = RedoStack.Stack.Pop();
-
-			try
-			{
-				_suppressRedoStackReset = true;
-
-				switch (record.OperationType)
-				{
-					case OperationType.Insert:
-						UndoStack.MakeDelete(Text, record.Where, record.Length);
-						DeleteChars(record.Where, record.Length);
-						CursorPosition = record.Where;
-						break;
-					case OperationType.Delete:
-						if (InsertChars(record.Where, record.Data))
-						{
-							UndoStack.MakeInsert(record.Where, record.Data.Length);
-							CursorPosition = record.Where + record.Data.Length;
-						}
-						break;
-					case OperationType.Replace:
-						UndoStack.MakeReplace(Text, record.Where, record.Length, record.Data.Length());
-						DeleteChars(record.Where, record.Length);
-						InsertChars(record.Where, record.Data);
-						break;
-				}
-			}
-			finally
-			{
-				_suppressRedoStackReset = false;
-			}
+			UndoRedo(RedoStack, UndoStack);
 		}
 
 		private void UserSetCursorPosition(int newPosition)
@@ -650,14 +620,28 @@ namespace Myra.Graphics2D.UI
 					break;
 
 				case Keys.Back:
-					if (Delete(CursorPosition - 1, 1))
+					if (SelectStart == SelectEnd)
 					{
-						--CursorPosition;
+						if (Delete(CursorPosition - 1, 1))
+						{
+							UserSetCursorPosition(CursorPosition - 1);
+						}
+					}
+					else
+					{
+						DeleteSelection();
 					}
 					break;
 
 				case Keys.Delete:
-					Delete(CursorPosition, 1);
+					if (SelectStart == SelectEnd)
+					{
+						Delete(CursorPosition, 1);
+					}
+					else
+					{
+						DeleteSelection();
+					}
 					break;
 
 				case Keys.Home:
