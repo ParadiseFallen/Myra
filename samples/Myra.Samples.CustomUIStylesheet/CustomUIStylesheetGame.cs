@@ -59,7 +59,7 @@ namespace Myra.Samples.CustomUIStylesheet
 			};
 
 			// Load stylesheet
-			var stylesheet = Stylesheet.CreateFromSource(assetResolver.ReadAsString("ui_stylesheet.json"),
+			var stylesheet = Stylesheet.LoadFromSource(assetResolver.ReadAsString("ui_stylesheet.json"),
 				s => textureAtlas[s],
 				s => fonts[s]);
 

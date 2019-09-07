@@ -949,7 +949,7 @@ namespace MyraPad
 				}
 			}
 
-			stylesheet = Stylesheet.CreateFromSource(data,
+			stylesheet = Stylesheet.LoadFromSource(data,
 				s =>
 				{
 					TextureRegion result;

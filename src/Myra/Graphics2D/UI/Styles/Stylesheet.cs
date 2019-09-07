@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using Myra.Graphics2D.TextureAtlases;
-using MiniJSON;
+using System.Xml.Serialization;
+using System.Xml.Linq;
+using Myra.MML;
 
 #if !XENKO
 using Microsoft.Xna.Framework.Graphics;
@@ -13,7 +15,7 @@ namespace Myra.Graphics2D.UI.Styles
 {
 	public class Stylesheet
 	{
-		public static readonly string DefaultStyleName = string.Empty;
+		public static readonly string DefaultStyleName = "Default";
 
 		private static Stylesheet _current;
 
@@ -78,6 +80,7 @@ namespace Myra.Graphics2D.UI.Styles
 			get; set;
 		}
 
+		[XmlIgnore]
 		public TextBlockStyle TextBlockStyle
 		{
 			get
@@ -90,6 +93,7 @@ namespace Myra.Graphics2D.UI.Styles
 			}
 		}
 
+		[XmlIgnore]
 		public TextFieldStyle TextFieldStyle
 		{
 			get
@@ -102,6 +106,7 @@ namespace Myra.Graphics2D.UI.Styles
 			}
 		}
 
+		[XmlIgnore]
 		public ButtonStyle ButtonStyle
 		{
 			get
@@ -114,6 +119,7 @@ namespace Myra.Graphics2D.UI.Styles
 			}
 		}
 
+		[XmlIgnore]
 		public ImageTextButtonStyle CheckBoxStyle
 		{
 			get
@@ -126,6 +132,7 @@ namespace Myra.Graphics2D.UI.Styles
 			}
 		}
 
+		[XmlIgnore]
 		public ImageTextButtonStyle RadioButtonStyle
 		{
 			get
@@ -138,6 +145,7 @@ namespace Myra.Graphics2D.UI.Styles
 			}
 		}
 
+		[XmlIgnore]
 		public SpinButtonStyle SpinButtonStyle
 		{
 			get
@@ -150,6 +158,7 @@ namespace Myra.Graphics2D.UI.Styles
 			}
 		}
 
+		[XmlIgnore]
 		public SliderStyle HorizontalSliderStyle
 		{
 			get
@@ -162,6 +171,7 @@ namespace Myra.Graphics2D.UI.Styles
 			}
 		}
 
+		[XmlIgnore]
 		public SliderStyle VerticalSliderStyle
 		{
 			get
@@ -174,6 +184,7 @@ namespace Myra.Graphics2D.UI.Styles
 			}
 		}
 
+		[XmlIgnore]
 		public ProgressBarStyle HorizontalProgressBarStyle
 		{
 			get
@@ -186,6 +197,7 @@ namespace Myra.Graphics2D.UI.Styles
 			}
 		}
 
+		[XmlIgnore]
 		public ProgressBarStyle VerticalProgressBarStyle
 		{
 			get
@@ -198,6 +210,7 @@ namespace Myra.Graphics2D.UI.Styles
 			}
 		}
 
+		[XmlIgnore]
 		public SeparatorStyle HorizontalSeparatorStyle
 		{
 			get
@@ -210,6 +223,7 @@ namespace Myra.Graphics2D.UI.Styles
 			}
 		}
 
+		[XmlIgnore]
 		public SeparatorStyle VerticalSeparatorStyle
 		{
 			get
@@ -222,6 +236,7 @@ namespace Myra.Graphics2D.UI.Styles
 			}
 		}
 
+		[XmlIgnore]
 		public ComboBoxStyle ComboBoxStyle
 		{
 			get
@@ -234,6 +249,7 @@ namespace Myra.Graphics2D.UI.Styles
 			}
 		}
 
+		[XmlIgnore]
 		public ListBoxStyle ListBoxStyle
 		{
 			get
@@ -246,6 +262,7 @@ namespace Myra.Graphics2D.UI.Styles
 			}
 		}
 
+		[XmlIgnore]
 		public TabControlStyle TabControlStyle
 		{
 			get
@@ -258,6 +275,7 @@ namespace Myra.Graphics2D.UI.Styles
 			}
 		}
 
+		[XmlIgnore]
 		public TreeStyle TreeStyle
 		{
 			get
@@ -270,6 +288,7 @@ namespace Myra.Graphics2D.UI.Styles
 			}
 		}
 
+		[XmlIgnore]
 		public SplitPaneStyle HorizontalSplitPaneStyle
 		{
 			get
@@ -282,6 +301,7 @@ namespace Myra.Graphics2D.UI.Styles
 			}
 		}
 
+		[XmlIgnore]
 		public SplitPaneStyle VerticalSplitPaneStyle
 		{
 			get
@@ -294,6 +314,7 @@ namespace Myra.Graphics2D.UI.Styles
 			}
 		}
 
+		[XmlIgnore]
 		public ScrollPaneStyle ScrollPaneStyle
 		{
 			get
@@ -306,6 +327,7 @@ namespace Myra.Graphics2D.UI.Styles
 			}
 		}
 
+		[XmlIgnore]
 		public MenuStyle HorizontalMenuStyle
 		{
 			get
@@ -318,6 +340,7 @@ namespace Myra.Graphics2D.UI.Styles
 			}
 		}
 
+		[XmlIgnore]
 		public MenuStyle VerticalMenuStyle
 		{
 			get
@@ -330,6 +353,7 @@ namespace Myra.Graphics2D.UI.Styles
 			}
 		}
 
+		[XmlIgnore]
 		public WindowStyle WindowStyle
 		{
 			get
@@ -342,6 +366,7 @@ namespace Myra.Graphics2D.UI.Styles
 			}
 		}
 
+		[XmlIgnore]
 		public DialogStyle DialogStyle
 		{
 			get
@@ -550,14 +575,22 @@ namespace Myra.Graphics2D.UI.Styles
 			styles[DefaultStyleName] = value;
 		}
 
-		public static Stylesheet CreateFromSource(string s,
+		public static Stylesheet LoadFromSource(string s,
 			Func<string, TextureRegion> textureGetter,
 			Func<string, SpriteFont> fontGetter)
 		{
-			var root = (Dictionary<string, object>)Json.Deserialize(s);
+			var xDoc = XDocument.Parse(s);
 
-			var loader = new StylesheetLoader(root, textureGetter, fontGetter);
-			return loader.Load();
+			var result = new Stylesheet();
+
+			var loadContext = new LoadContext
+			{
+				Namespace = typeof(WidgetStyle).Namespace
+			};
+
+			loadContext.Load(result, xDoc.Root);
+
+			return result;
 		}
 	}
 }
