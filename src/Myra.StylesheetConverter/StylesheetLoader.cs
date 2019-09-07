@@ -381,7 +381,7 @@ namespace Myra.StylesheetConverter
 
 			if (source.GetStyle(ImageStyleName, out style))
 			{
-				var imageStyle = new XElement("PressableImageStyle");
+				var imageStyle = new XElement("ImageStyle");
 				LoadPressableImageStyleFromSource(style, imageStyle);
 				result.Add(imageStyle);
 			}
@@ -400,7 +400,7 @@ namespace Myra.StylesheetConverter
 			JObject labelStyle;
 			if (source.GetStyle(LabelStyleName, out labelStyle))
 			{
-				var textBlockStyle = new XElement("TextBlockStyle");
+				var textBlockStyle = new XElement("LabelStyle");
 				LoadTextBlockStyleFromSource(labelStyle, textBlockStyle);
 				result.Add(textBlockStyle);
 			}
@@ -413,7 +413,7 @@ namespace Myra.StylesheetConverter
 			JObject style;
 			if (source.GetStyle(ImageStyleName, out style))
 			{
-				var pressableImageStyle = new XElement("PressableImageStyle");
+				var pressableImageStyle = new XElement("ImageStyle");
 				LoadPressableImageStyleFromSource(style, pressableImageStyle);
 				result.Add(pressableImageStyle);
 			}
@@ -433,15 +433,15 @@ namespace Myra.StylesheetConverter
 
 			if (source.GetStyle(UpButtonStyleName, out style))
 			{
-				var upButtonStyle = new XElement("ImageButtonStyle");
-				LoadTextFieldStyleFromSource(style, upButtonStyle);
+				var upButtonStyle = new XElement("UpButtonStyle");
+				LoadImageButtonStyleFromSource(style, upButtonStyle);
 				result.Add(upButtonStyle);
 			}
 
 			if (source.GetStyle(DownButtonStyleName, out style))
 			{
-				var downButtonStyle = new XElement("ImageButtonStyle");
-				LoadTextFieldStyleFromSource(style, downButtonStyle);
+				var downButtonStyle = new XElement("DownButtonStyle");
+				LoadImageButtonStyleFromSource(style, downButtonStyle);
 				result.Add(downButtonStyle);
 			}
 		}
@@ -453,7 +453,7 @@ namespace Myra.StylesheetConverter
 			JObject style;
 			if (source.GetStyle(KnobName, out style))
 			{
-				var knobButtonStyle = new XElement("ImageButtonStyle");
+				var knobButtonStyle = new XElement("KnobStyle");
 				LoadImageButtonStyleFromSource(style, knobButtonStyle);
 				result.Add(knobButtonStyle);
 			}
@@ -477,14 +477,14 @@ namespace Myra.StylesheetConverter
 			JObject style;
 			if (source.GetStyle(ItemsContainerName, out style))
 			{
-				var itemsContainerStyle = new XElement("WidgetStyle");
+				var itemsContainerStyle = new XElement("ItemsContainerStyle");
 				LoadWidgetStyleFromSource(style, itemsContainerStyle);
 				result.Add(itemsContainerStyle);
 			}
 
 			if (source.GetStyle(ComboBoxItemName, out style))
 			{
-				var listItemStyle = new XElement("ImageTextButtonStyle");
+				var listItemStyle = new XElement("ListItemStyle");
 				LoadImageTextButtonStyleFromSource(style, listItemStyle);
 				result.Add(listItemStyle);
 			}
@@ -497,7 +497,7 @@ namespace Myra.StylesheetConverter
 			JObject style;
 			if (source.GetStyle(ListBoxItemName, out style))
 			{
-				var listItemStyle = new XElement("ImageTextButtonStyle");
+				var listItemStyle = new XElement("ListItemStyle");
 				LoadImageTextButtonStyleFromSource(style, listItemStyle);
 				result.Add(listItemStyle);
 			}
@@ -517,14 +517,14 @@ namespace Myra.StylesheetConverter
 			JObject style;
 			if (source.GetStyle(TabItemName, out style))
 			{
-				var tabItemStyle = new XElement("ImageTextButtonStyle");
+				var tabItemStyle = new XElement("TabItemStyle");
 				LoadImageTextButtonStyleFromSource(style, tabItemStyle);
 				result.Add(tabItemStyle);
 			}
 
 			if (source.GetStyle(ContentName, out style))
 			{
-				var contentStyle = new XElement("WidgetStyle");
+				var contentStyle = new XElement("ContentStyle");
 				LoadWidgetStyleFromSource(style, contentStyle);
 				result.Add(contentStyle);
 			}
@@ -580,7 +580,7 @@ namespace Myra.StylesheetConverter
 			JObject style;
 			if (source.GetStyle(HandleName, out style))
 			{
-				var handleStyle = new XElement("ButtonStyle");
+				var handleStyle = new XElement("HandleStyle");
 				LoadButtonStyleFromSource(style, handleStyle);
 				result.Add(handleStyle);
 			}
@@ -622,13 +622,13 @@ namespace Myra.StylesheetConverter
 			JObject obj;
 			if (source.GetStyle(MarkName, out obj))
 			{
-				var markStyle = new XElement("ImageButtonStyle");
+				var markStyle = new XElement("MarkStyle");
 				LoadImageButtonStyleFromSource(obj, markStyle);
 				result.Add(markStyle);
 
 				if (obj.GetStyle(LabelStyleName, out obj))
 				{
-					var labelStyle = new XElement("TextBlockStyle");
+					var labelStyle = new XElement("LabelStyle");
 					LoadTextBlockStyleFromSource(obj, labelStyle);
 					result.Add(labelStyle);
 				}
@@ -642,14 +642,14 @@ namespace Myra.StylesheetConverter
 			JObject obj;
 			if (source.GetStyle(TitleStyleName, out obj))
 			{
-				var titleStyle = new XElement("TextBlockStyle");
+				var titleStyle = new XElement("TitleStyle");
 				LoadTextBlockStyleFromSource(obj, titleStyle);
 				result.Add(titleStyle);
 			}
 
 			if (source.GetStyle(CloseButtonStyleName, out obj))
 			{
-				var closeButtonStyle = new XElement("ImageButtonStyle");
+				var closeButtonStyle = new XElement("CloseButtonStyle");
 				LoadImageButtonStyleFromSource(obj, closeButtonStyle);
 				result.Add(closeButtonStyle);
 			}
@@ -660,7 +660,8 @@ namespace Myra.StylesheetConverter
 			LoadWindowStyleFromSource(source, result);
 		}
 
-		private void FillStyles(string key, XElement root,
+		private void FillStyles(string key, 
+			XElement root,
 			string dictName,
 			Action<JObject, XElement> fillAction)
 		{
@@ -673,13 +674,13 @@ namespace Myra.StylesheetConverter
 			var stylesElement = new XElement(dictName);
 			root.Add(stylesElement);
 
-			var styleElement = new XElement(dictName.Substring(0, dictName.Length - 1));
-			styleElement.SetAttributeValue("Id", Stylesheet.DefaultStyleName);
+			var styleName = dictName.Substring(0, dictName.Length - 1);
+			var styleElement = new XElement(styleName);
 			stylesElement.Add(styleElement);
 
 			fillAction(source, styleElement);
 
-/*			JObject styles;
+			JObject styles;
 			if (!source.GetStyle(VariantsName, out styles) || styles == null)
 			{
 				return;
@@ -687,10 +688,11 @@ namespace Myra.StylesheetConverter
 
 			foreach (var pair in styles)
 			{
-				var variant = (T)stylesDict[Stylesheet.DefaultStyleName].Clone();
+				var variant = new XElement(styleName);
+				variant.SetAttributeValue("Id", pair.Key);
 				fillAction((JObject)pair.Value, variant);
-				stylesDict[pair.Key] = variant;
-			}*/
+				stylesElement.Add(variant);
+			}
 		}
 
 		private XElement LoadDesktopStyleFromSource()

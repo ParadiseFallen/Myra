@@ -27,12 +27,6 @@ namespace Myra.Graphics2D.UI
 	public class Project
 	{
 		private static readonly ConcurrentDictionary<string, string> LegacyNames = new ConcurrentDictionary<string, string>();
-		private static readonly Type[] SerializableTypes = new Type[]
-		{
-			typeof(IItemWithId),
-			typeof(ExportOptions),
-			typeof(Grid.Proportion)
-		};
 
 		private readonly ExportOptions _exportOptions = new ExportOptions();
 
@@ -43,6 +37,7 @@ namespace Myra.Graphics2D.UI
 		}
 
 		[HiddenInEditor]
+		[Content]
 		public Widget Root { get; set; }
 
 		[HiddenInEditor]
@@ -69,7 +64,6 @@ namespace Myra.Graphics2D.UI
 		{
 			return new SaveContext
 			{
-				SerializableTypes = SerializableTypes,
 				ShouldSerializeProperty = (o, p) =>
 				{
 					return !SaveContext.HasDefaultValue(o, p) &&
@@ -88,7 +82,7 @@ namespace Myra.Graphics2D.UI
 		{
 			return new LoadContext
 			{
-				SerializableTypes = SerializableTypes,
+				LegacyNames = LegacyNames,
 				ObjectCreator = t => CreateItem(t, stylesheet),
 				Namespace = typeof(Widget).Namespace
 			};

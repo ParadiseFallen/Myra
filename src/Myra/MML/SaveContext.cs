@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Myra.Attributes;
 using Myra.Graphics2D.UI;
 using Myra.Utility;
 using System;
@@ -79,7 +80,8 @@ namespace Myra.MML
 					else
 					{
 						var collectionRoot = el;
-						if (!typeof(IItemWithId).IsAssignableFrom(property.PropertyType.GenericTypeArguments[0]))
+
+						if (property.FindAttribute<ContentAttribute>() == null)
 						{
 							collectionRoot = new XElement(property.Name);
 							el.Add(collectionRoot);
@@ -101,10 +103,10 @@ namespace Myra.MML
 			var value = property.GetValue(w);
 			if (property.HasDefaultValue(value))
 			{
-				return false;
+				return true;
 			}
 
-			return true;
+			return false;
 		}
 	}
 }

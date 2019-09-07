@@ -1,5 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Myra.Attributes;
 using Myra.Graphics2D;
+using Myra.Graphics2D.TextureAtlases;
 using Myra.Graphics2D.UI;
 using Myra.Utility;
 using System;
@@ -19,6 +22,8 @@ namespace Myra.MML
 		public Func<Type, object> ObjectCreator = (type) => Activator.CreateInstance(type);
 		public string Namespace;
 		public Assembly Assembly = typeof(Widget).Assembly;
+		public Func<string, TextureRegion> TextureGetter = null;
+		public Func<string, SpriteFont> FontGetter = null;
 
 		public void Load(object obj, XElement el)
 		{
@@ -35,28 +40,50 @@ namespace Myra.MML
 				{
 					object value = null;
 
-					if (property.PropertyType.IsEnum)
+					var propertyType = property.PropertyType;
+					if (propertyType.IsEnum)
 					{
-						value = Enum.Parse(property.PropertyType, attr.Value);
+						value = Enum.Parse(propertyType, attr.Value);
 					}
-					else if (property.PropertyType == typeof(Color) ||
-						property.PropertyType == typeof(Color?))
+					else if (propertyType == typeof(Color) || 
+						propertyType == typeof(Color?))
 					{
 						value = attr.Value.FromName();
 					}
+					else if (propertyType == typeof(IRenderable) && TextureGetter != null)
+					{
+						var texture = TextureGetter(attr.Value);
+						if (texture == null)
+						{
+							throw new Exception(string.Format("Could not find renderable '{0}'", attr.Value));
+						}
+						value = texture;
+					}
+					else if (propertyType == typeof(SpriteFont) && FontGetter != null)
+					{
+						var font = FontGetter(attr.Value);
+						if (font == null)
+						{
+							throw new Exception(string.Format("Could not find font '{0}'", attr.Value));
+						}
+						value = font;
+					}
 					else
 					{
-						var type2 = property.PropertyType;
-						if (property.PropertyType.IsNullablePrimitive())
+						if (propertyType.IsNullablePrimitive())
 						{
-							type2 = property.PropertyType.GetNullableType();
+							propertyType = propertyType.GetNullableType();
 						}
 
-						value = Convert.ChangeType(attr.Value, type2, CultureInfo.InvariantCulture);
+						value = Convert.ChangeType(attr.Value, propertyType, CultureInfo.InvariantCulture);
 					}
 					property.SetValue(obj, value);
 				}
 			}
+
+			var contentProperty = (from p in complexProperties
+								   where p.FindAttribute<ContentAttribute>() 
+								   != null select p).FirstOrDefault();
 
 			foreach (var child in el.Elements())
 			{
@@ -64,31 +91,57 @@ namespace Myra.MML
 				var property = (from p in complexProperties where p.Name == child.Name select p).FirstOrDefault();
 				if (property != null)
 				{
-					if (property.SetMethod == null)
+					do
 					{
-						// Readonly property
 						var value = property.GetValue(obj);
-						var asCollection = value as IList;
-						if (asCollection != null)
+						var asList = value as IList;
+						if (asList != null)
 						{
+							// List
 							foreach (var child2 in child.Elements())
 							{
 								var item = ObjectCreator(property.PropertyType.GenericTypeArguments[0]);
 								Load(item, child2);
-								asCollection.Add(item);
+								asList.Add(item);
 							}
+
+							break;
+						}
+
+						var asDict = value as IDictionary;
+						if (asDict != null)
+						{
+							// Dict
+							foreach (var child2 in child.Elements())
+							{
+								var item = ObjectCreator(property.PropertyType.GenericTypeArguments[1]);
+								Load(item, child2);
+
+								var id = string.Empty;
+								if (child2.Attribute(IdName) != null)
+								{
+									id = child2.Attribute(IdName).Value;
+								}
+
+								asDict[id] = item;
+							}
+
+							break;
+						}
+
+						if (property.SetMethod == null)
+						{
+							// Readonly
+							Load(value, child);
 						}
 						else
 						{
-							Load(value, child);
+							var newValue = ObjectCreator(property.PropertyType);
+							Load(newValue, child);
+							property.SetValue(obj, newValue);
 						}
-					}
-					else
-					{
-						var value = ObjectCreator(property.PropertyType);
-						Load(value, child);
-						property.SetValue(obj, value);
-					}
+						break;
+					} while (true);
 				}
 				else
 				{
@@ -104,47 +157,24 @@ namespace Myra.MML
 					var itemType = Assembly.GetType(Namespace + "." + widgetName);
 					if (itemType != null)
 					{
-						var item = (IItemWithId)ObjectCreator(itemType);
+						var item = ObjectCreator(itemType);
 						Load(item, child);
 
-						if (obj is ComboBox)
+						if (contentProperty == null)
 						{
-							((ComboBox)obj).Items.Add((ListItem)item);
+							throw new Exception(string.Format("Class {0} lacks property marked with ContentAttribute", type.Name));
 						}
-						else
-						if (obj is ListBox)
+
+						var containerValue = contentProperty.GetValue(obj);
+						var asList = containerValue as IList;
+						if (asList != null)
 						{
-							((ListBox)obj).Items.Add((ListItem)item);
-						}
-						else
-						if (obj is TabControl)
+							// List
+							asList.Add(item);
+						} else
 						{
-							((TabControl)obj).Items.Add((TabItem)item);
-						}
-						else
-						if (obj is MenuItem)
-						{
-							((MenuItem)obj).Items.Add((IMenuItem)item);
-						}
-						else if (obj is Menu)
-						{
-							((Menu)obj).Items.Add((IMenuItem)item);
-						}
-						else if (obj is IContent)
-						{
-							((IContent)obj).Content = (Widget)item;
-						}
-						else if (obj is MultipleItemsContainer)
-						{
-							((MultipleItemsContainer)obj).Widgets.Add((Widget)item);
-						}
-						else if (obj is SplitPane)
-						{
-							((SplitPane)obj).Widgets.Add((Widget)item);
-						}
-						else if (obj is Project)
-						{
-							((Project)obj).Root = (Widget)item;
+							// Simple
+							contentProperty.SetValue(obj, item);
 						}
 					}
 					else

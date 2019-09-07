@@ -15,7 +15,7 @@ namespace Myra.Graphics2D.UI.Styles
 {
 	public class Stylesheet
 	{
-		public static readonly string DefaultStyleName = "Default";
+		public static readonly string DefaultStyleName = string.Empty;
 
 		private static Stylesheet _current;
 
@@ -585,7 +585,9 @@ namespace Myra.Graphics2D.UI.Styles
 
 			var loadContext = new LoadContext
 			{
-				Namespace = typeof(WidgetStyle).Namespace
+				Namespace = typeof(WidgetStyle).Namespace,
+				TextureGetter = textureGetter,
+				FontGetter = fontGetter
 			};
 
 			loadContext.Load(result, xDoc.Root);
