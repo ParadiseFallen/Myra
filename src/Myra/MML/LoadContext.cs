@@ -19,6 +19,7 @@ namespace Myra.MML
 	internal class LoadContext: BaseContext
 	{
 		public ConcurrentDictionary<string, string> LegacyNames = new ConcurrentDictionary<string, string>();
+		public HashSet<string> NodesToIgnore = null;
 		public Func<Type, object> ObjectCreator = (type) => Activator.CreateInstance(type);
 		public string Namespace;
 		public Assembly Assembly = typeof(Widget).Assembly;
@@ -87,8 +88,14 @@ namespace Myra.MML
 
 			foreach (var child in el.Elements())
 			{
+				var childName = child.Name.ToString();
+				if (NodesToIgnore != null && NodesToIgnore.Contains(childName))
+				{
+					continue;
+				}
+
 				// Find property
-				var property = (from p in complexProperties where p.Name == child.Name select p).FirstOrDefault();
+				var property = (from p in complexProperties where p.Name == childName select p).FirstOrDefault();
 				if (property != null)
 				{
 					do
@@ -147,7 +154,7 @@ namespace Myra.MML
 				{
 					// Property not found
 					// Should be widget class name then
-					var widgetName = child.Name.ToString();
+					var widgetName = childName;
 					string newName;
 					if (LegacyNames.TryGetValue(widgetName, out newName))
 					{

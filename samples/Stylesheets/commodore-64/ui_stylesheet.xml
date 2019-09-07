@@ -1,6 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Stylesheet>
-  <Desktop Background="blue" />
+  <Designer>
+    <TextureAtlas Atlas="ui_stylesheet_atlas.json" Image="ui_stylesheet_atlas.png" />
+    <Font Id="commodore-64" File="commodore-64.fnt" />
+  </Designer>
+  <DesktopStyle Background="blue" />
   <TextBlockStyles>
     <TextBlockStyle Font="commodore-64" TextColor="white" />
     <TextBlockStyle Id="optional" Font="commodore-64" />

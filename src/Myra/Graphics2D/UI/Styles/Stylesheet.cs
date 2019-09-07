@@ -45,30 +45,22 @@ namespace Myra.Graphics2D.UI.Styles
 		private readonly Dictionary<string, SpinButtonStyle> _spinButtonStyles = new Dictionary<string, SpinButtonStyle>();
 		private readonly Dictionary<string, SliderStyle> _horizontalSliderStyles = new Dictionary<string, SliderStyle>();
 		private readonly Dictionary<string, SliderStyle> _verticalSliderStyles = new Dictionary<string, SliderStyle>();
-
 		private readonly Dictionary<string, ProgressBarStyle> _horizontalProgressBarStyles =
 			new Dictionary<string, ProgressBarStyle>();
-
 		private readonly Dictionary<string, ProgressBarStyle> _verticalProgressBarStyles =
 			new Dictionary<string, ProgressBarStyle>();
-
 		private readonly Dictionary<string, SeparatorStyle> _horizontalSeparatorStyles =
 			new Dictionary<string, SeparatorStyle>();
-
 		private readonly Dictionary<string, SeparatorStyle> _verticalSeparatorStyles =
 			new Dictionary<string, SeparatorStyle>();
-
 		private readonly Dictionary<string, ComboBoxStyle> _comboBoxStyles = new Dictionary<string, ComboBoxStyle>();
 		private readonly Dictionary<string, ListBoxStyle> _listBoxStyles = new Dictionary<string, ListBoxStyle>();
 		private readonly Dictionary<string, TabControlStyle> _tabControlStyles = new Dictionary<string, TabControlStyle>();
 		private readonly Dictionary<string, TreeStyle> _treeStyles = new Dictionary<string, TreeStyle>();
-
 		private readonly Dictionary<string, SplitPaneStyle> _horizontalSplitPaneStyles =
 			new Dictionary<string, SplitPaneStyle>();
-
 		private readonly Dictionary<string, SplitPaneStyle> _verticalSplitPaneStyles =
 			new Dictionary<string, SplitPaneStyle>();
-
 		private readonly Dictionary<string, ScrollPaneStyle> _scrollPaneStyles = new Dictionary<string, ScrollPaneStyle>();
 		private readonly Dictionary<string, MenuStyle> _horizontalMenuStyles = new Dictionary<string, MenuStyle>();
 		private readonly Dictionary<string, MenuStyle> _verticalMenuStyles = new Dictionary<string, MenuStyle>();
@@ -587,7 +579,8 @@ namespace Myra.Graphics2D.UI.Styles
 			{
 				Namespace = typeof(WidgetStyle).Namespace,
 				TextureGetter = textureGetter,
-				FontGetter = fontGetter
+				FontGetter = fontGetter,
+				NodesToIgnore = new HashSet<string>(new[] { "Designer" })
 			};
 
 			loadContext.Load(result, xDoc.Root);
